@@ -1,0 +1,36 @@
+#![allow(unused)]
+
+
+
+
+
+
+
+mod genvec;
+use genvec::*;
+
+
+
+
+
+fn main() {
+    let mut vec: GenVec<u32> = GenVec::with_capacity(10000);
+    let handle = vec.alloc(56);
+    
+    let value = *vec.get_mut(handle).unwrap();
+    println!("{:?}", value);
+    
+    let value = *vec.get_ref(handle).unwrap();
+    println!("{:?}", value);
+    
+    let value = vec.get_copy(handle).unwrap();
+    println!("{:?}", value);
+    
+    
+    assert!(vec.exists(handle));
+    vec.free(handle);
+    assert!(! vec.exists(handle));
+    
+    println!("{:?}", vec);
+    
+}
