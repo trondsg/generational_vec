@@ -182,7 +182,7 @@ impl<'a, T> Iterator for GenVecIter<'a, T> {
             }
             // case 2
             let item = &self.container.vec[self.index];
-            if item.generation % 2 == 0 {
+            if item.generation & 1 == 0 {
                 self.index += 1;
                 return Some(&item.data);
             }
