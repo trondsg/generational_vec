@@ -33,6 +33,18 @@ pub struct GenVec<T> {
 //     };
 // }
 
+
+macro_rules! mkgetter {
+    ($name:ident $(, $reftype:tt)?) => {
+         fn $name(&$($reftype)? self, h: EntryHandle<T>) -> Option<&$($reftype)? T> {
+            if self.vec[h.index].generation != h.generation {
+                return None;
+            }
+            return Some(&$($reftype)? self.vec[h.index].data);
+        }
+    };
+}
+
 impl<T> GenVec<T> {
     pub fn new() -> Self {
         Self::with_capacity(8)
@@ -63,7 +75,8 @@ impl<T> GenVec<T> {
     }
     /// Mark an element as disused. This does not call drop().
     /// This invalidates the handle. Using the handle with
-    /// the index_??? functions will panic. Using it with get
+    /// the index_??? functions will panic. Using it with the
+    /// get_ functions yields None.
     pub fn free(&mut self, h: EntryHandle<T>) {
         // Increase generation, add to free list
         let el = &mut self.vec[h.index];
@@ -117,9 +130,11 @@ impl<T> GenVec<T> {
         }
         return Some(&mut self.vec[h.index].data);
     }
+    // mkgetter!(get_mut, mut);
+    // mkgetter!(get_ref);
     /// Get an iterator that only yields filled items.
     /// O(n) over highest number of elements ever in use, not counting underlying vec unused capacity.
-    fn iter(&self) -> GenVecIter<'_, T> {
+    pub fn iter(&self) -> GenVecIter<'_, T> {
         GenVecIter {
             container: self,
             index: 0,
@@ -148,7 +163,7 @@ impl <T: Copy> GenVec<T> {
 #[allow(non_snake_case)]
 fn __Iterators__() {}
 
-struct GenVecIter<'a, T> {
+pub struct GenVecIter<'a, T> {
     container: &'a GenVec<T>,
     index: usize,
 }
@@ -167,7 +182,7 @@ impl<'a, T> Iterator for GenVecIter<'a, T> {
             }
             // case 2
             let item = &self.container.vec[self.index];
-            if item.generation & 2 == 0 {
+            if item.generation % 2 == 0 {
                 self.index += 1;
                 return Some(&item.data);
             }
@@ -177,6 +192,7 @@ impl<'a, T> Iterator for GenVecIter<'a, T> {
         }
     }
 }
+
 
 
 // impl<T> Default for GenVec<T> {

@@ -26,10 +26,20 @@ fn main() {
     let value = vec.get_copy(handle).unwrap();
     println!("{:?}", value);
     
+    for i in 1..10 {
+        vec.alloc(i);
+    }
+    
+
     
     assert!(vec.exists(handle));
     vec.free(handle);
     assert!(! vec.exists(handle));
+    
+    println!("-------------");
+    for i in vec.iter() {
+        println!("{:?}", i);
+    }
     
     println!("{:?}", vec);
     
