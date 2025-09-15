@@ -168,6 +168,11 @@ pub struct GenVecIter<'a, T> {
     index: usize,
 }
 
+pub struct GenVecIterMut<'a, T> {
+    container: &'a mut GenVec<T>,
+    index: usize,
+}
+
 impl<'a, T> Iterator for GenVecIter<'a, T> {
     type Item = &'a T;
 
@@ -190,6 +195,52 @@ impl<'a, T> Iterator for GenVecIter<'a, T> {
             self.index += 1;
             continue;
         }
+    }
+}
+
+impl<'a, T> Iterator for GenVecIterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // case 1: end of vec -> None
+        // case 2: found item -> Some(&item)
+        // case 3: empty item -> self.index += 1; retry
+        loop {
+            // case 1
+            if self.index == self.container.vec.len() {
+                return None;
+            }
+            // case 2
+            let item = &mut self.container.vec[self.index];
+            if item.generation & 1 == 0 {
+                self.index += 1;
+                return Some(&mut item.data);
+            }
+            // case 3
+            self.index += 1;
+            continue;
+        }
+    }
+}
+
+
+impl<'a, T> IntoIterator for &'a GenVec<T> {
+    type Item = &'a T;
+
+    type IntoIter = GenVecIter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut GenVec<T> {
+    type Item = &'a mut T;
+
+    type IntoIter = GenVecIterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        GenVecIterMut { container: self, index: 0 }
     }
 }
 
