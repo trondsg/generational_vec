@@ -21,22 +21,9 @@ pub struct GenVec<T> {
     freelist: Vec<usize>,
 }
 
-
-// macro_rules! mkgetter {
-//     ($name:ident, $reftype:tt) => {
-//          fn $name(&$reftype self, h: EntryHandle<T>) -> Option<&$reftype T> {
-//             if self.vec[h.index].generation != h.generation {
-//                 return None;
-//             }
-//             return Some(&$reftype self.vec[h.index].data);
-//         }
-//     };
-// }
-
-
 macro_rules! mkgetter {
     ($name:ident $(, $reftype:tt)?) => {
-         fn $name(&$($reftype)? self, h: EntryHandle<T>) -> Option<&$($reftype)? T> {
+         pub fn $name(&$($reftype)? self, h: EntryHandle<T>) -> Option<&$($reftype)? T> {
             if self.vec[h.index].generation != h.generation {
                 return None;
             }
@@ -97,9 +84,6 @@ impl<T> GenVec<T> {
         }
         return false;
     }
-    // mkgetter!(get_mut, &mut);
-    // mkgetter!(get, &);
-        
     /// Get a &T or panic.
     pub fn index_ref(&self, h: EntryHandle<T>) -> &T {
         let el = &self.vec[h.index];
@@ -116,22 +100,23 @@ impl<T> GenVec<T> {
         }
         return &mut el.data;
     }
+    mkgetter!(get_mut, mut);
+    mkgetter!(get_ref);
     /// Get a Some(&T) or None.
-    pub fn get_ref(&self, h: EntryHandle<T>) -> Option<&T> {
-        if self.vec[h.index].generation != h.generation {
-            return None;
-        }
-        return Some(&self.vec[h.index].data);
-    }
-    /// Get a Some(&mut T) or None.
-    pub fn get_mut(&mut self, h: EntryHandle<T>) -> Option<&mut T> {
-        if self.vec[h.index].generation != h.generation {
-            return None;
-        }
-        return Some(&mut self.vec[h.index].data);
-    }
-    // mkgetter!(get_mut, mut);
-    // mkgetter!(get_ref);
+    // pub fn get_ref(&self, h: EntryHandle<T>) -> Option<&T> {
+    //     if self.vec[h.index].generation != h.generation {
+    //         return None;
+    //     }
+    //     return Some(&self.vec[h.index].data);
+    // }
+    // /// Get a Some(&mut T) or None.
+    // pub fn get_mut(&mut self, h: EntryHandle<T>) -> Option<&mut T> {
+    //     if self.vec[h.index].generation != h.generation {
+    //         return None;
+    //     }
+    //     return Some(&mut self.vec[h.index].data);
+    // }
+    
     /// Get an iterator that only yields filled items.
     /// O(n) over highest number of elements ever in use, not counting underlying vec unused capacity.
     pub fn iter(&self) -> GenVecIter<'_, T> {
@@ -143,13 +128,6 @@ impl<T> GenVec<T> {
 }
 
 impl <T: Copy> GenVec<T> {
-    /// Get a copy of T or None.
-    pub fn get_copy(&self, h: EntryHandle<T>) -> Option<T> {
-        if self.vec[h.index].generation != h.generation {
-            return None;
-        }
-        return Some(self.vec[h.index].data);
-    }
     /// Get a T or panic.
     pub fn index_copy(&self, h: EntryHandle<T>) -> T {
         let el = &self.vec[h.index];
@@ -157,6 +135,13 @@ impl <T: Copy> GenVec<T> {
             panic!("Invalid handle: {:?}", (h.generation, h.index));
         }
         return el.data;
+    }
+    /// Get a copy of T or None.
+    pub fn get_copy(&self, h: EntryHandle<T>) -> Option<T> {
+        if self.vec[h.index].generation != h.generation {
+            return None;
+        }
+        return Some(self.vec[h.index].data);
     }
 }
 
@@ -198,30 +183,30 @@ impl<'a, T> Iterator for GenVecIter<'a, T> {
     }
 }
 
-impl<'a, T> Iterator for GenVecIterMut<'a, T> {
-    type Item = &'a mut T;
+// impl<'a, T> Iterator for GenVecIterMut<'a, T> {
+//     type Item = &'a mut T;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        // case 1: end of vec -> None
-        // case 2: found item -> Some(&item)
-        // case 3: empty item -> self.index += 1; retry
-        loop {
-            // case 1
-            if self.index == self.container.vec.len() {
-                return None;
-            }
-            // case 2
-            let item = &mut self.container.vec[self.index];
-            if item.generation & 1 == 0 {
-                self.index += 1;
-                return Some(&mut item.data);
-            }
-            // case 3
-            self.index += 1;
-            continue;
-        }
-    }
-}
+//     fn next(&mut self) -> Option<Self::Item> {
+//         // case 1: end of vec -> None
+//         // case 2: found item -> Some(&item)
+//         // case 3: empty item -> self.index += 1; retry
+//         loop {
+//             // case 1
+//             if self.index == self.container.vec.len() {
+//                 return None;
+//             }
+//             // case 2
+//             let item = &mut self.container.vec[self.index];
+//             if item.generation & 1 == 0 {
+//                 self.index += 1;
+//                 return Some(&mut item.data);
+//             }
+//             // case 3
+//             self.index += 1;
+//             continue;
+//         }
+//     }
+// }
 
 
 impl<'a, T> IntoIterator for &'a GenVec<T> {
@@ -234,15 +219,15 @@ impl<'a, T> IntoIterator for &'a GenVec<T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a mut GenVec<T> {
-    type Item = &'a mut T;
+// impl<'a, T> IntoIterator for &'a mut GenVec<T> {
+//     type Item = &'a mut T;
 
-    type IntoIter = GenVecIterMut<'a, T>;
+//     type IntoIter = GenVecIterMut<'a, T>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        GenVecIterMut { container: self, index: 0 }
-    }
-}
+//     fn into_iter(self) -> Self::IntoIter {
+//         GenVecIterMut { container: self, index: 0 }
+//     }
+// }
 
 
 

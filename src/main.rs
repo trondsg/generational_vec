@@ -14,8 +14,8 @@ use genvec::*;
 
 
 fn main() {
-    let mut vec: GenVec<u32> = GenVec::with_capacity(10000);
-    let handle = vec.alloc(56);
+    let mut vec: GenVec<u32> = GenVec::with_capacity(1000);
+    let handle = vec.alloc(777);
     
     let value = *vec.get_mut(handle).unwrap();
     println!("{:?}", value);
@@ -29,8 +29,6 @@ fn main() {
     for i in 1..10 {
         vec.alloc(i);
     }
-    
-
     
     assert!(vec.exists(handle));
     vec.free(handle);
