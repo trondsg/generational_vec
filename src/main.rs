@@ -1,3 +1,4 @@
+#![feature(impl_trait_in_assoc_type)]
 #![allow(unused)]
 
 
@@ -30,12 +31,20 @@ fn main() {
         vec.alloc(i);
     }
     
+    // Test mutable iterator
+    for el in vec.iter_mut() {
+        *el += 1;
+    }
+    for el in &mut vec {
+        *el += 1;
+    }
+    
     assert!(vec.exists(handle));
     vec.free(handle);
     assert!(! vec.exists(handle));
     
     println!("-------------");
-    for i in vec.iter() {
+    for i in &vec {
         println!("{:?}", i);
     }
     
