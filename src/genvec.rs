@@ -2,6 +2,7 @@
 use core::panic;
 use std::marker::PhantomData;
 
+/// Use like a pointer or index
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EntryHandle<T> {
     generation: u64,
@@ -42,6 +43,8 @@ impl<T> GenVec<T> {
             freelist: Vec::new(),
         }
     }
+    /// Allocate a new element, set its initial value (data),
+    /// and get a handle to it.
     pub fn alloc(&mut self, data: T) -> EntryHandle<T> {
         let index;
         let generation;
@@ -126,7 +129,6 @@ impl<T> GenVec<T> {
                 |item| ((item.generation & 1) == 0).then_some(&item.data)
             )
     }
-    
     /// Get an iterator yields &mut items.
     /// O(n) over highest number of elements ever in use, not counting underlying vec unused capacity.
     pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut T> + '_ {
@@ -135,13 +137,6 @@ impl<T> GenVec<T> {
                 |mut item| ((item.generation & 1) == 0).then_some(&mut item.data)
             )
     }
-    
-    /*pub fn iter(&self) -> GenVecIter<'_, T> {
-        GenVecIter {
-            container: self,
-            index: 0,
-        }
-    }*/
 }
 
 impl <T: Copy> GenVec<T> {
@@ -162,72 +157,6 @@ impl <T: Copy> GenVec<T> {
     }
 }
 
-// #[allow(non_snake_case)]
-// fn __Iterators__() {}
-/*/
-pub struct GenVecIter<'a, T> {
-    container: &'a GenVec<T>,
-    index: usize,
-}
-
-pub struct GenVecIterMut<'a, T> {
-    container: &'a mut GenVec<T>,
-    index: usize,
-}
-
-impl<'a, T> Iterator for GenVecIter<'a, T> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // case 1: end of vec -> None
-        // case 2: found item -> Some(&item)
-        // case 3: empty item -> self.index += 1; retry
-        loop {
-            // case 1
-            if self.index == self.container.vec.len() {
-                return None;
-            }
-            // case 2
-            let item = &self.container.vec[self.index];
-            if item.generation & 1 == 0 {
-                self.index += 1;
-                return Some(&item.data);
-            }
-            // case 3
-            self.index += 1;
-            continue;
-        }
-    }
-}
-
-impl<'a, T> Iterator for GenVecIterMut<'a, T> {
-    type Item = &'a mut T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // case 1: end of vec -> None
-        // case 2: found item -> Some(&item)
-        // case 3: empty item -> self.index += 1; retry
-        loop {
-            // case 1
-            if self.index == self.container.vec.len() {
-                return None;
-            }
-            // case 2
-            // let item = &mut self.container.vec[self.index];
-            // if item.generation & 1 == 0 {
-            if self.container.vec[self.index].generation & 1 == 0 {
-                self.index += 1;
-                let item = &mut self.container.vec[self.index];
-                return Some(&mut item.data);
-            }
-            // case 3
-            self.index += 1;
-            continue;
-        }
-    }
-}
-
-*/
 impl<'a, T> IntoIterator for &'a GenVec<T> {
     type Item = &'a T;
     type IntoIter = impl Iterator<Item=&'a T> + 'a;
@@ -243,19 +172,6 @@ impl<'a, T> IntoIterator for &'a mut GenVec<T> {
         self.iter_mut()
     }
 }
-
-/*
-// impl<'a, T> IntoIterator for &'a mut GenVec<T> {
-//     type Item = &'a mut T;
-
-//     type IntoIter = GenVecIterMut<'a, T>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         GenVecIterMut { container: self, index: 0 }
-//     }
-// }
-
-*/
 
 impl<T> Default for GenVec<T> {
     fn default() -> Self {
