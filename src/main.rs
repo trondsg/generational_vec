@@ -7,7 +7,7 @@
 
 
 
-mod genvec;
+pub mod genvec;
 use genvec::*;
 
 
