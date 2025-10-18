@@ -3,4 +3,8 @@ name = "generational_vec"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "generational_vec_typed_lightweight"
+path = "src/genvec.rs"
+
 [dependencies]

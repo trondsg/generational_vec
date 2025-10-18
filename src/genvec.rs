@@ -1,3 +1,4 @@
+#![feature(impl_trait_in_assoc_type)]
 #![allow(unused)]
 use core::panic;
 use std::marker::PhantomData;
@@ -16,6 +17,7 @@ struct GenVecEntry<T> {
     data: T,
 }
 
+/// Use like a vec
 #[derive(Debug)]
 pub struct GenVec<T> {
     vec: Vec<GenVecEntry<T>>,
@@ -134,7 +136,7 @@ impl<T> GenVec<T> {
     pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut T> + '_ {
         self.vec.iter_mut()
             .filter_map(
-                |mut item| ((item.generation & 1) == 0).then_some(&mut item.data)
+                |item| ((item.generation & 1) == 0).then_some(&mut item.data)
             )
     }
 }
@@ -148,7 +150,7 @@ impl <T: Copy> GenVec<T> {
         }
         return el.data;
     }
-    /// Get a copy of T or None.
+    /// Get a Some(copy of T) or None.
     pub fn get_copy(&self, h: EntryHandle<T>) -> Option<T> {
         if self.vec[h.index].generation != h.generation {
             return None;
