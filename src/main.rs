@@ -48,6 +48,9 @@ fn main() {
         println!("{:?}", i);
     }
     
+    let items: Vec<_> = vec.iter().collect();
+    
+    println!("{:?}", items);
     println!("{:?}", vec);
     
 }
